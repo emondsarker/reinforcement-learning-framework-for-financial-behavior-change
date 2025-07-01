@@ -1,0 +1,48 @@
+Please use the following citation when using the data,"Elif E Firat, Dharmateja Vytia, Navya Vasudeva, Zhuoqun Jiang, Robert S Laramee, MoneyVis: Open Bank Transaction Data for Visualization and Beyond, Eurovis Short Papers, Eurovis 2023, 12-16 June 2023, Leipzig, Germany, https://doi.org/10.2312/evs.20231052, https://youtu.be/0tVzFK085gU"
+,
+Outgoing,All transactions that debited from the account are categorized as Outgoing
+Incoming,All transactions that credited to the account are categorized as Incoming
+Savings,All savings transactions are categorized as Savings 
+Health,All transactions involving dietary supplements are categorized as Health
+,
+Amazon ,Transactions done on Amazon
+Bills,"Transactions made while paying bills which includes Gas, Electricity, Council tax and Water"
+Cash ,The transactions when the card was used to withdraw money from the Cash machines
+Clothes,Purchases made while shopping clothes
+Dine Out,Transactions done in Restaurants and online food ordering
+Entertainment ,"Movies, amusement park rides, bowling"
+Fitness,Gym and Yoga
+Groceries ,All the super markets
+ Health ,Purchase of health supplements
+ Home Improvement,"Transactions made while buying home essentials like carpets, flooring, furniture."
+Hotels,Transactions made to book a stay while travelling
+Insurance,Transactions made done for Insurance
+Interest,Interest that is credited very month.
+Investment,Transactions done on Investing
+Mortgage,Payments made for Mortgage
+Other Shopping,"This includes the transactions done while shopping gifts, shoes etc"
+Others,Miscellaneous transactions
+Paycheck,This includes the Salary credited every month.
+Services ,The payments made for individuals
+Rent ,The deposit paid
+Savings,Payment monthly savings
+Supplementary Income ,The amount received from others including the refund
+Travel ,"Purchase of flight, train and bus tickets"
+,
+,
+,
+,
+Code,Description
+BGC,Bank Giro Credit
+BP,Bill Payment
+C/P,Cashpoint
+CHQ,Cheque
+D/D,Direct Debit
+DEB,Payment type Debit Card
+DEP,Deposit
+FEE,Fixed Service Charge
+FPI,Faster Payments Inwards
+FPO,Faster Payments Outwards
+PAY,Payment
+TFR,Transfer
+SO,Standing Order
