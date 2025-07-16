@@ -207,29 +207,6 @@ export const MarketplacePage: React.FC = () => {
               )}
             </>
           )}
-
-          {/* Task 10 Complete Notice */}
-          <div className="mt-12 bg-green-50 border border-green-200 rounded-md p-4">
-            <div className="flex">
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-green-800">
-                  Task 10 Complete - Interactive Marketplace Ready!
-                </h3>
-                <div className="mt-2 text-sm text-green-700">
-                  <p>Full shopping cart functionality now implemented:</p>
-                  <ul className="mt-1 list-disc list-inside space-y-1">
-                    <li>Add products to cart with quantity selection</li>
-                    <li>Shopping cart sidebar with item management</li>
-                    <li>Purchase modal for single items and cart checkout</li>
-                    <li>Real-time stock validation and wallet integration</li>
-                    <li>
-                      Persistent cart storage and comprehensive error handling
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
