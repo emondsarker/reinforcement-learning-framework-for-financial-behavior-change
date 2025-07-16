@@ -21,7 +21,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({ cart }) => {
           Items ({cart.total_items} {cart.total_items === 1 ? "item" : "items"})
         </span>
         <span className="font-medium text-gray-900">
-          ${subtotal.toFixed(2)}
+          ${Number(subtotal).toFixed(2)}
         </span>
       </div>
 
@@ -63,7 +63,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({ cart }) => {
         <div className="flex justify-between">
           <span className="text-base font-medium text-gray-900">Total</span>
           <span className="text-lg font-bold text-gray-900">
-            ${total.toFixed(2)}
+            ${Number(total).toFixed(2)}
           </span>
         </div>
       </div>

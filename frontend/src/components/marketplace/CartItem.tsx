@@ -80,7 +80,7 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
               by {item.product.merchant_name}
             </p>
             <p className="text-sm font-medium text-gray-900 mt-1">
-              ${item.product.price.toFixed(2)} each
+              ${Number(item.product.price).toFixed(2)} each
             </p>
           </div>
 
@@ -121,11 +121,11 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
           {/* Subtotal */}
           <div className="text-right">
             <p className="text-sm font-medium text-gray-900">
-              ${item.subtotal.toFixed(2)}
+              ${Number(item.subtotal).toFixed(2)}
             </p>
             {item.quantity > 1 && (
               <p className="text-xs text-gray-500">
-                ${item.product.price.toFixed(2)} × {item.quantity}
+                ${Number(item.product.price).toFixed(2)} × {item.quantity}
               </p>
             )}
           </div>
