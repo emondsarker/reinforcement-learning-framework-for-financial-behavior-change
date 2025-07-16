@@ -19,19 +19,15 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { WalletPage } from "./pages/WalletPage";
 import { MarketplacePage } from "./pages/MarketplacePage";
 import { CoachingPage } from "./pages/CoachingPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import { AdminPage } from "./pages/AdminPage";
+import { ErrorBoundary, PageLoader } from "./utils";
 
 const AppRoutes: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuthContext();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader text="Initializing FinCoach..." />;
   }
 
   return (
@@ -95,6 +91,24 @@ const AppRoutes: React.FC = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/analytics"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <AnalyticsPage />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Root redirect */}
       <Route
@@ -117,18 +131,20 @@ const AppRoutes: React.FC = () => {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <AuthProvider>
-          <CartProvider>
-            <Router>
-              <AppRoutes />
-            </Router>
-          </CartProvider>
-        </AuthProvider>
-      </ToastProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Router>
+                <AppRoutes />
+              </Router>
+            </CartProvider>
+          </AuthProvider>
+        </ToastProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

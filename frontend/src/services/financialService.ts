@@ -5,6 +5,8 @@ import type {
   TransactionCreate,
   SpendingAnalytics,
   FinancialHealthSummary,
+  BalanceHistoryPoint,
+  MonthlySummary,
 } from "../types/financial";
 import type { PaginatedResponse } from "../types/common";
 
@@ -60,25 +62,40 @@ export const deleteTransaction = async (id: number): Promise<void> => {
   await api.delete(`/financial/transactions/${id}`);
 };
 
-// Analytics operations
-export interface GetSpendingAnalyticsParams {
-  period?: "week" | "month" | "quarter" | "year";
-  start_date?: string;
-  end_date?: string;
-}
-
-export const getSpendingAnalytics = async (
-  params: GetSpendingAnalyticsParams = {}
-): Promise<SpendingAnalytics> => {
-  const response = await api.get("/financial/analytics/spending", { params });
+// Analytics operations - matching backend endpoints
+export const getSpendingAnalyticsByCategory = async (
+  days: number = 30
+): Promise<SpendingAnalytics[]> => {
+  const response = await api.get("/financial/analytics/spending-by-category", {
+    params: { days },
+  });
   return response.data;
 };
 
 export const getFinancialHealthSummary =
   async (): Promise<FinancialHealthSummary> => {
-    const response = await api.get("/financial/analytics/health");
+    const response = await api.get("/financial/health-summary");
     return response.data;
   };
+
+export const getBalanceHistory = async (
+  days: number = 30
+): Promise<BalanceHistoryPoint[]> => {
+  const response = await api.get("/financial/balance-history", {
+    params: { days },
+  });
+  return response.data.balance_history;
+};
+
+export const getMonthlySummary = async (
+  year: number,
+  month: number
+): Promise<MonthlySummary> => {
+  const response = await api.get("/financial/monthly-summary", {
+    params: { year, month },
+  });
+  return response.data;
+};
 
 // Recent transactions (for dashboard)
 export const getRecentTransactions = async (

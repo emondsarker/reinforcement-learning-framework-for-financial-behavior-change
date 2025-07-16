@@ -27,6 +27,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Admin email check function
+  const checkIsAdmin = (email: string): boolean => {
+    const adminEmails = [
+      "admin@fincoach.com",
+      "admin@example.com",
+      "test@admin.com",
+    ];
+    return adminEmails.includes(email.toLowerCase());
+  };
 
   // Initialize auth state on mount
   useEffect(() => {
@@ -38,6 +49,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(userData);
           setToken(currentToken);
           setIsAuthenticated(true);
+          setIsAdmin(checkIsAdmin(userData.email));
         }
       } catch (error) {
         // Token might be expired or invalid
@@ -46,6 +58,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null);
         setToken(null);
         setIsAuthenticated(false);
+        setIsAdmin(false);
       } finally {
         setIsLoading(false);
       }
@@ -61,6 +74,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
       setToken(response.access_token);
       setIsAuthenticated(true);
+      setIsAdmin(checkIsAdmin(response.user.email));
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(response.user);
       setToken(response.access_token);
       setIsAuthenticated(true);
+      setIsAdmin(checkIsAdmin(response.user.email));
     } finally {
       setIsLoading(false);
     }
@@ -88,6 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       setToken(null);
       setIsAuthenticated(false);
+      setIsAdmin(false);
       setIsLoading(false);
     }
   };
@@ -102,6 +118,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     token,
     isAuthenticated,
+    isAdmin,
     isLoading,
     login,
     register,

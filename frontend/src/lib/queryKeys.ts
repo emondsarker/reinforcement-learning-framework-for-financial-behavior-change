@@ -31,6 +31,18 @@ export const queryKeys = {
       spending: (period?: string) =>
         [...queryKeys.financial.analytics.all(), "spending", period] as const,
       health: () => [...queryKeys.financial.analytics.all(), "health"] as const,
+      balanceHistory: (days?: string) =>
+        [
+          ...queryKeys.financial.analytics.all(),
+          "balance-history",
+          days,
+        ] as const,
+      monthlySummary: (period?: string) =>
+        [
+          ...queryKeys.financial.analytics.all(),
+          "monthly-summary",
+          period,
+        ] as const,
     },
   },
 

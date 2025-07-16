@@ -7,14 +7,13 @@ import {
   getTransaction,
   updateTransaction,
   deleteTransaction,
-  getSpendingAnalytics,
+  getSpendingAnalyticsByCategory,
   getFinancialHealthSummary,
   getRecentTransactions,
+  getBalanceHistory,
+  getMonthlySummary,
 } from "../services/financialService";
-import type {
-  GetTransactionsParams,
-  GetSpendingAnalyticsParams,
-} from "../services/financialService";
+import type { GetTransactionsParams } from "../services/financialService";
 import type { Transaction, TransactionCreate } from "../types/financial";
 import type { PaginatedResponse } from "../types/common";
 import { queryKeys, invalidateQueries } from "../lib/queryKeys";
@@ -241,12 +240,10 @@ export const useDeleteTransaction = () => {
 };
 
 // Analytics hooks
-export const useSpendingAnalytics = (
-  params: GetSpendingAnalyticsParams = {}
-) => {
+export const useSpendingAnalyticsByCategory = (days: number = 30) => {
   return useQuery({
-    queryKey: queryKeys.financial.analytics.spending(params.period),
-    queryFn: () => getSpendingAnalytics(params),
+    queryKey: queryKeys.financial.analytics.spending(days.toString()),
+    queryFn: () => getSpendingAnalyticsByCategory(days),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -258,5 +255,24 @@ export const useFinancialHealthSummary = () => {
     queryFn: getFinancialHealthSummary,
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useBalanceHistory = (days: number = 30) => {
+  return useQuery({
+    queryKey: queryKeys.financial.analytics.balanceHistory(days.toString()),
+    queryFn: () => getBalanceHistory(days),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+export const useMonthlySummary = (year: number, month: number) => {
+  return useQuery({
+    queryKey: queryKeys.financial.analytics.monthlySummary(`${year}-${month}`),
+    queryFn: () => getMonthlySummary(year, month),
+    staleTime: 5 * 60 * 1000, // 5 minutes (monthly data changes less frequently)
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!year && !!month,
   });
 };

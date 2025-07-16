@@ -142,3 +142,51 @@ export interface MonthlyReport {
   category_breakdown: SpendingAnalytics[];
   insights: FinancialInsight[];
 }
+
+// Analytics-specific types
+export interface BalanceHistoryPoint {
+  date: string;
+  balance: number;
+  transaction_type: TransactionType;
+  amount: number;
+}
+
+export interface MonthlySummary {
+  month: number;
+  year: number;
+  total_income: number;
+  total_spending: number;
+  net_change: number;
+  transaction_count: number;
+  average_transaction: number;
+}
+
+export interface AnalyticsTimeRange {
+  label: string;
+  days: number;
+  value: string;
+}
+
+export interface FinancialMetric {
+  label: string;
+  value: string | number;
+  change?: number;
+  changeType?: "increase" | "decrease" | "neutral";
+  format: "currency" | "percentage" | "number";
+  status?: "good" | "warning" | "danger";
+}
+
+export interface SpendingTrendData {
+  date: string;
+  spending: number;
+  income: number;
+  balance: number;
+}
+
+export interface CategorySpendingData {
+  category: string;
+  amount: number;
+  percentage: number;
+  color: string;
+  transactions: number;
+}

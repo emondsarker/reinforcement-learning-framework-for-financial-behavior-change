@@ -106,3 +106,25 @@ export type {
   Language,
   UserPreferences,
 } from "./common";
+
+// Admin types
+export type {
+  AdminStats,
+  UserOverview,
+  TransactionOverview,
+  ProductAnalytics,
+  SystemHealth,
+  AdminDashboardData,
+  AdminUserFilters,
+  AdminTransactionFilters,
+  AdminProductFilters,
+  AdminAction,
+  AdminPermissions,
+  AdminUser,
+  CreateProductForm,
+  UpdateProductForm,
+  CreateCategoryForm,
+  UpdateCategoryForm,
+  AdminLoadingState,
+  AdminError,
+} from "./admin";

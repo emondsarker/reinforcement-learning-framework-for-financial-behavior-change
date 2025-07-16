@@ -119,3 +119,33 @@ class UserPurchase(Base):
     user = relationship("User", back_populates="purchases")
     product = relationship("Product", back_populates="purchases")
     transaction = relationship("Transaction")
+
+class RecommendationHistory(Base):
+    __tablename__ = "recommendation_history"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    recommendation_text = Column(Text, nullable=False)
+    action_type = Column(String(50), nullable=False)
+    confidence_score = Column(DECIMAL(5, 4), nullable=False)  # 0.0000 to 1.0000
+    financial_state_snapshot = Column(Text)  # JSON string of financial state
+    created_at = Column(DateTime, server_default=func.now())
+    feedback_status = Column(String(20), default="pending")  # pending, helpful, not_helpful, implemented
+
+    # Relationships
+    user = relationship("User")
+    feedback = relationship("RecommendationFeedback", back_populates="recommendation", uselist=False)
+
+class RecommendationFeedback(Base):
+    __tablename__ = "recommendation_feedback"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    recommendation_id = Column(UUID(as_uuid=True), ForeignKey("recommendation_history.id"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    feedback_type = Column(String(20), nullable=False)  # helpful, not_helpful, implemented
+    feedback_text = Column(Text)
+    created_at = Column(DateTime, server_default=func.now())
+
+    # Relationships
+    user = relationship("User")
+    recommendation = relationship("RecommendationHistory", back_populates="feedback")

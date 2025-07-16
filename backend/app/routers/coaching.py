@@ -1,10 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 from app.models.ml_models import AIRecommendation, FinancialState
 from app.services.ml_service import CQLModelService
 from app.middleware.auth_middleware import get_current_active_user
 from app.database import get_db
-from app.models.database import User
+from app.models.database import User, RecommendationHistory, RecommendationFeedback
+from typing import List, Optional
+from pydantic import BaseModel
+import json
 
 router = APIRouter(prefix="/coaching", tags=["ai-coaching"])
 
@@ -119,33 +123,133 @@ async def get_available_actions():
     
     return {"actions": actions}
 
+# Pydantic models for request/response
+class FeedbackRequest(BaseModel):
+    recommendation_id: str
+    helpful: bool
+    feedback_text: Optional[str] = None
+
+class RecommendationHistoryResponse(BaseModel):
+    id: str
+    recommendation_text: str
+    action_type: str
+    confidence_score: float
+    created_at: str
+    feedback_status: str
+
+class HistoryResponse(BaseModel):
+    recommendations: List[RecommendationHistoryResponse]
+    total: int
+    page: int
+    limit: int
+
+@router.get("/history", response_model=HistoryResponse)
+async def get_recommendation_history(
+    limit: int = 20,
+    offset: int = 0,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get paginated recommendation history for the current user"""
+    try:
+        # Get total count
+        total = db.query(RecommendationHistory).filter(
+            RecommendationHistory.user_id == current_user.id
+        ).count()
+        
+        # Get paginated recommendations
+        recommendations = db.query(RecommendationHistory).filter(
+            RecommendationHistory.user_id == current_user.id
+        ).order_by(desc(RecommendationHistory.created_at)).offset(offset).limit(limit).all()
+        
+        # Convert to response format
+        recommendation_responses = []
+        for rec in recommendations:
+            recommendation_responses.append(RecommendationHistoryResponse(
+                id=str(rec.id),
+                recommendation_text=rec.recommendation_text,
+                action_type=rec.action_type,
+                confidence_score=float(rec.confidence_score),
+                created_at=rec.created_at.isoformat(),
+                feedback_status=rec.feedback_status
+            ))
+        
+        return HistoryResponse(
+            recommendations=recommendation_responses,
+            total=total,
+            page=(offset // limit) + 1,
+            limit=limit
+        )
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve recommendation history"
+        )
+
 @router.post("/feedback")
 async def submit_recommendation_feedback(
-    recommendation_id: str,
-    helpful: bool,
-    feedback_text: str = None,
+    feedback_request: FeedbackRequest,
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db)
 ):
     """Submit feedback on a coaching recommendation (for future model improvement)"""
     try:
-        # In a full implementation, this would store feedback in the database
-        # for model retraining and improvement
-        feedback_data = {
-            "user_id": str(current_user.id),
-            "recommendation_id": recommendation_id,
-            "helpful": helpful,
-            "feedback_text": feedback_text,
-            "timestamp": "2024-01-01T00:00:00"  # Would use actual timestamp
-        }
+        # Map frontend feedback to backend format
+        feedback_type = "helpful" if feedback_request.helpful else "not_helpful"
         
-        # For now, just return success
+        # Check if recommendation exists
+        recommendation = db.query(RecommendationHistory).filter(
+            RecommendationHistory.id == feedback_request.recommendation_id,
+            RecommendationHistory.user_id == current_user.id
+        ).first()
+        
+        if not recommendation:
+            # For backwards compatibility, create a temporary recommendation entry
+            # This handles cases where frontend sends feedback for recommendations
+            # that weren't stored in the database yet
+            recommendation = RecommendationHistory(
+                user_id=current_user.id,
+                recommendation_text="Legacy recommendation",
+                action_type="unknown",
+                confidence_score=0.5,
+                feedback_status=feedback_type
+            )
+            db.add(recommendation)
+            db.flush()  # Get the ID without committing
+        
+        # Create or update feedback
+        existing_feedback = db.query(RecommendationFeedback).filter(
+            RecommendationFeedback.recommendation_id == recommendation.id,
+            RecommendationFeedback.user_id == current_user.id
+        ).first()
+        
+        if existing_feedback:
+            # Update existing feedback
+            existing_feedback.feedback_type = feedback_type
+            existing_feedback.feedback_text = feedback_request.feedback_text
+        else:
+            # Create new feedback
+            new_feedback = RecommendationFeedback(
+                recommendation_id=recommendation.id,
+                user_id=current_user.id,
+                feedback_type=feedback_type,
+                feedback_text=feedback_request.feedback_text
+            )
+            db.add(new_feedback)
+        
+        # Update recommendation feedback status
+        recommendation.feedback_status = feedback_type
+        
+        db.commit()
+        
         return {
             "message": "Feedback submitted successfully",
-            "feedback_id": "temp-feedback-id"
+            "feedback_id": str(recommendation.id)
         }
     
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to submit feedback"
