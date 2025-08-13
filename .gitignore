@@ -224,3 +224,6 @@ Thumbs.db
 # *.pth
 # *.h5
 # *.model
+
+# Project planning documents
+plans/
