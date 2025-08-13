@@ -149,3 +149,54 @@ class RecommendationFeedback(Base):
     # Relationships
     user = relationship("User")
     recommendation = relationship("RecommendationHistory", back_populates="feedback")
+
+class BehavioralEvent(Base):
+    __tablename__ = "behavioral_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    event_type = Column(String(50), nullable=False)  # page_view, recommendation_interaction, purchase, goal_modification
+    event_data = Column(Text)  # JSON string for flexible event data storage
+    timestamp = Column(DateTime, server_default=func.now())
+    created_at = Column(DateTime, server_default=func.now())
+
+    # Relationships
+    user = relationship("User")
+
+class UserSegment(Base):
+    __tablename__ = "user_segments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True)
+    segment_id = Column(Integer)  # Dynamically determined (1-5)
+    segment_name = Column(String(100))
+    confidence = Column(DECIMAL(5, 4))  # 0.0000 to 1.0000
+    features = Column(Text)  # JSON string of segmentation features
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User")
+
+class PredictionCache(Base):
+    __tablename__ = "prediction_cache"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    prediction_type = Column(String(50), nullable=False)  # spending, goal, recommendation
+    prediction_data = Column(Text)  # JSON string of prediction results
+    created_at = Column(DateTime, server_default=func.now())
+    expires_at = Column(DateTime, nullable=False)  # TTL-based expiration
+
+    # Relationships
+    user = relationship("User")
+
+class ModelPerformance(Base):
+    __tablename__ = "model_performance"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    model_name = Column(String(100), nullable=False)  # segmentation, recommendation, spending, goal
+    accuracy_metric = Column(DECIMAL(6, 4))
+    sample_count = Column(Integer, default=0)
+    feature_importance = Column(Text)  # JSON string
+    created_at = Column(DateTime, server_default=func.now())
