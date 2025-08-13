@@ -1,0 +1,157 @@
+{
+  "0": {
+    "name": "Conservative Savers",
+    "size": 5,
+    "percentage": 10.204081632653061,
+    "characteristics": {
+      "current_balance": {
+        "mean": "10531.689",
+        "std": 4532.07470703125
+      },
+      "total_spending": {
+        "mean": "10807.914",
+        "std": 4647.5693359375
+      },
+      "savings_rate": {
+        "mean": "-0.87467515",
+        "std": 0.6308967471122742
+      },
+      "spending_volatility": {
+        "mean": "628.4752",
+        "std": 102.60134887695312
+      },
+      "category_diversity": {
+        "mean": "2.7265172",
+        "std": 0.11044397205114365
+      },
+      "emergency_fund_ratio": {
+        "mean": "0.9965935",
+        "std": 0.5507020950317383
+      }
+    }
+  },
+  "1": {
+    "name": "Impulse Buyers",
+    "size": 23,
+    "percentage": 46.93877551020408,
+    "characteristics": {
+      "current_balance": {
+        "mean": "14264.305",
+        "std": 3880.1298828125
+      },
+      "total_spending": {
+        "mean": "3711.3516",
+        "std": 1080.526611328125
+      },
+      "savings_rate": {
+        "mean": "-4.1746306",
+        "std": 20.1010799407959
+      },
+      "spending_volatility": {
+        "mean": "156.5291",
+        "std": 56.89306640625
+      },
+      "category_diversity": {
+        "mean": "2.5433831",
+        "std": 0.19228215515613556
+      },
+      "emergency_fund_ratio": {
+        "mean": "2.993644",
+        "std": 1.0716326236724854
+      }
+    }
+  },
+  "2": {
+    "name": "Goal-Oriented",
+    "size": 13,
+    "percentage": 26.53061224489796,
+    "characteristics": {
+      "current_balance": {
+        "mean": "1702.5768",
+        "std": 1908.85400390625
+      },
+      "total_spending": {
+        "mean": "5847.2188",
+        "std": 932.7838745117188
+      },
+      "savings_rate": {
+        "mean": "0.023723103",
+        "std": 0.14589574933052063
+      },
+      "spending_volatility": {
+        "mean": "173.17516",
+        "std": 27.727617263793945
+      },
+      "category_diversity": {
+        "mean": "2.832369",
+        "std": 0.1352505087852478
+      },
+      "emergency_fund_ratio": {
+        "mean": "0.36323595",
+        "std": 0.46026936173439026
+      }
+    }
+  },
+  "3": {
+    "name": "Budget Conscious",
+    "size": 1,
+    "percentage": 2.0408163265306123,
+    "characteristics": {
+      "current_balance": {
+        "mean": "10265.47",
+        "std": NaN
+      },
+      "total_spending": {
+        "mean": "15762.69",
+        "std": NaN
+      },
+      "savings_rate": {
+        "mean": "0.8383601",
+        "std": NaN
+      },
+      "spending_volatility": {
+        "mean": "859.0819",
+        "std": NaN
+      },
+      "category_diversity": {
+        "mean": "2.7466338",
+        "std": NaN
+      },
+      "emergency_fund_ratio": {
+        "mean": "0.5716538",
+        "std": NaN
+      }
+    }
+  },
+  "4": {
+    "name": "High Spenders",
+    "size": 7,
+    "percentage": 14.285714285714285,
+    "characteristics": {
+      "current_balance": {
+        "mean": "4998.663",
+        "std": 4069.8828125
+      },
+      "total_spending": {
+        "mean": "5350.0283",
+        "std": 2203.70654296875
+      },
+      "savings_rate": {
+        "mean": "-0.094486594",
+        "std": 0.4353731870651245
+      },
+      "spending_volatility": {
+        "mean": "210.60843",
+        "std": 90.71002197265625
+      },
+      "category_diversity": {
+        "mean": "2.4765313",
+        "std": 0.1566489189863205
+      },
+      "emergency_fund_ratio": {
+        "mean": "1.1889994",
+        "std": 1.5082283020019531
+      }
+    }
+  }
+}

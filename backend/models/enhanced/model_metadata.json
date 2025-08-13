@@ -1,0 +1,22 @@
+{
+  "model_version": "2.0.0",
+  "training_date": "2025-08-13T05:24:54.922297",
+  "segmentation_score": "0.16408128",
+  "total_users": 49,
+  "feature_dimensions": 35,
+  "goal_accuracy": 0.9,
+  "action_meanings": {
+    "0": "continue_current_behavior",
+    "1": "spending_alert",
+    "2": "budget_suggestion",
+    "3": "savings_nudge",
+    "4": "positive_reinforcement"
+  },
+  "segment_names": {
+    "0": "Conservative Savers",
+    "1": "Impulse Buyers",
+    "2": "Goal-Oriented",
+    "3": "Budget Conscious",
+    "4": "High Spenders"
+  }
+}
