@@ -1,8 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
-from app.models.ml_models import AIRecommendation, FinancialState
-from app.services.ml_service import CQLModelService
+from app.models.ml_models import (
+    AIRecommendation, FinancialState, EnhancedAIRecommendation, 
+    UserSegmentInfo, SpendingPrediction, GoalAchievementProbability,
+    BehavioralInsight
+)
+from app.services.ml_service import (
+    CQLModelService, EnhancedCQLModelService, UserSegmentationService,
+    SpendingPredictionService, GoalPredictionService
+)
+from app.services.behavioral_event_service import BehavioralEventService
 from app.middleware.auth_middleware import get_current_active_user
 from app.database import get_db
 from app.models.database import User, RecommendationHistory, RecommendationFeedback
@@ -315,4 +323,314 @@ async def get_financial_insights(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate financial insights"
+        )
+
+# Enhanced ML endpoints for Phase 3
+
+# Initialize enhanced services
+enhanced_ml_service = EnhancedCQLModelService()
+segmentation_service = UserSegmentationService()
+spending_prediction_service = SpendingPredictionService()
+goal_prediction_service = GoalPredictionService()
+behavioral_service = BehavioralEventService()
+
+@router.get("/enhanced-recommendation", response_model=EnhancedAIRecommendation)
+async def get_enhanced_coaching_recommendation(
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get enhanced AI coaching recommendation with behavioral segmentation"""
+    try:
+        # Track recommendation view event
+        background_tasks.add_task(
+            behavioral_service.track_recommendation_interaction,
+            str(current_user.id), "enhanced_recommendation", "view", None, db
+        )
+        
+        recommendation = enhanced_ml_service.get_enhanced_recommendation(str(current_user.id), db)
+        return recommendation
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate enhanced coaching recommendation"
+        )
+
+@router.get("/user-segment", response_model=UserSegmentInfo)
+async def get_user_segment(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get user's behavioral segment information"""
+    try:
+        segment_info = segmentation_service.classify_user_segment(str(current_user.id), db)
+        return segment_info
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve user segment information"
+        )
+
+@router.get("/segment-insights")
+async def get_segment_insights(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get segment-specific insights and characteristics"""
+    try:
+        # Get user segment
+        segment_info = segmentation_service.classify_user_segment(str(current_user.id), db)
+        
+        # Get segment characteristics
+        characteristics = segmentation_service.get_segment_characteristics(segment_info.segment_id)
+        
+        # Get peer comparison
+        peers = segmentation_service.get_segment_peers(str(current_user.id), db, limit=5)
+        
+        return {
+            "segment_info": segment_info,
+            "characteristics": characteristics,
+            "peer_comparison": peers,
+            "generated_at": segment_info.assigned_at
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve segment insights"
+        )
+
+@router.get("/segment-comparison")
+async def get_segment_comparison(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Compare user with segment peers"""
+    try:
+        peers = segmentation_service.get_segment_peers(str(current_user.id), db, limit=10)
+        
+        if not peers:
+            return {
+                "message": "No peer data available for comparison",
+                "peers": []
+            }
+        
+        # Calculate peer averages
+        peer_avg_balance = sum(peer['current_balance'] for peer in peers) / len(peers)
+        peer_avg_savings_rate = sum(peer['savings_rate'] for peer in peers) / len(peers)
+        peer_avg_volatility = sum(peer['spending_volatility'] for peer in peers) / len(peers)
+        
+        return {
+            "peer_count": len(peers),
+            "peer_averages": {
+                "current_balance": peer_avg_balance,
+                "savings_rate": peer_avg_savings_rate,
+                "spending_volatility": peer_avg_volatility
+            },
+            "peers": peers
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve segment comparison"
+        )
+
+@router.post("/refresh-segment")
+async def refresh_user_segment(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Trigger user segment recalculation"""
+    try:
+        updated_segment = segmentation_service.update_user_segment(str(current_user.id), db)
+        
+        return {
+            "message": "User segment updated successfully",
+            "segment_info": updated_segment
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to refresh user segment"
+        )
+
+@router.get("/spending-prediction", response_model=SpendingPrediction)
+async def get_spending_prediction(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get weekly spending forecasts"""
+    try:
+        prediction = await spending_prediction_service.predict_weekly_spending(str(current_user.id), db)
+        return prediction
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate spending prediction"
+        )
+
+class GoalPredictionRequest(BaseModel):
+    goal_amount: float
+    timeline_days: int
+
+@router.post("/goal-probability", response_model=GoalAchievementProbability)
+async def get_goal_achievement_probability(
+    goal_request: GoalPredictionRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get goal achievement probability"""
+    try:
+        prediction = await goal_prediction_service.predict_goal_achievement(
+            str(current_user.id), 
+            goal_request.goal_amount, 
+            goal_request.timeline_days, 
+            db
+        )
+        return prediction
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate goal achievement prediction"
+        )
+
+@router.get("/financial-forecast")
+async def get_financial_forecast(
+    days: int = 30,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get financial health projections"""
+    try:
+        # Get spending prediction
+        spending_prediction = await spending_prediction_service.predict_weekly_spending(str(current_user.id), db)
+        
+        # Get current financial state
+        enhanced_state_generator = enhanced_ml_service.enhanced_state_generator
+        current_state = enhanced_state_generator.get_enhanced_financial_state_summary(str(current_user.id), db)
+        
+        # Project future balance
+        weekly_predicted_spending = spending_prediction.total_predicted_spending
+        weekly_income = current_state.weekly_income
+        weekly_net = weekly_income - weekly_predicted_spending
+        
+        projected_balance = current_state.current_balance + (weekly_net * (days / 7))
+        
+        return {
+            "current_balance": current_state.current_balance,
+            "projected_balance": projected_balance,
+            "projection_days": days,
+            "weekly_predicted_spending": weekly_predicted_spending,
+            "weekly_income": weekly_income,
+            "weekly_net": weekly_net,
+            "spending_prediction": spending_prediction,
+            "generated_at": spending_prediction.generated_at
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate financial forecast"
+        )
+
+@router.get("/behavioral-insights")
+async def get_behavioral_insights(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get user behavior analysis"""
+    try:
+        behavior_summary = await behavioral_service.get_user_behavior_summary(str(current_user.id), db)
+        return behavior_summary
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve behavioral insights"
+        )
+
+@router.get("/behavioral-events")
+async def get_behavioral_events(
+    days: int = 7,
+    event_type: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get user's recent behavioral events"""
+    try:
+        behavior_data = await behavioral_service.aggregate_user_behavior(str(current_user.id), days, db)
+        
+        # Filter by event type if specified
+        if event_type and behavior_data:
+            event_counts = behavior_data.get('event_counts', {})
+            interaction_patterns = behavior_data.get('interaction_patterns', {})
+            
+            filtered_counts = {k: v for k, v in event_counts.items() if k == event_type}
+            filtered_patterns = {k: v for k, v in interaction_patterns.items() if k == event_type}
+            
+            behavior_data['event_counts'] = filtered_counts
+            behavior_data['interaction_patterns'] = filtered_patterns
+        
+        return behavior_data
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve behavioral events"
+        )
+
+@router.get("/behavior-changes")
+async def get_behavior_changes(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get detected behavioral changes"""
+    try:
+        changes = await behavioral_service.detect_behavior_changes(str(current_user.id), db)
+        
+        return {
+            "user_id": str(current_user.id),
+            "behavior_changes": changes,
+            "change_count": len(changes),
+            "analysis_date": behavioral_service.validate_service_health()['last_check']
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to detect behavior changes"
+        )
+
+@router.get("/enhanced-health")
+async def check_enhanced_model_health():
+    """Check enhanced AI model health status"""
+    try:
+        health_status = {
+            "enhanced_cql_service": enhanced_ml_service.validate_model_health() if hasattr(enhanced_ml_service, 'validate_model_health') else {"status": "unknown"},
+            "segmentation_service": segmentation_service.validate_segmentation_health(),
+            "behavioral_service": behavioral_service.validate_service_health(),
+            "spending_prediction_service": {"status": "healthy", "model_loaded": spending_prediction_service.spending_model is not None},
+            "goal_prediction_service": {"status": "healthy", "model_loaded": goal_prediction_service.goal_model is not None}
+        }
+        
+        # Overall health status
+        all_healthy = all(
+            service_health.get("status") == "healthy" 
+            for service_health in health_status.values()
+        )
+        
+        health_status["overall_status"] = "healthy" if all_healthy else "degraded"
+        
+        return health_status
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to check enhanced model health"
         )

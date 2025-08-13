@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from app.routers import auth, financial, products, coaching
 from app.database import engine, Base
+from app.middleware.behavioral_tracking_middleware import BehavioralTrackingMiddleware
 import os
 import logging
 
@@ -40,6 +41,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Behavioral tracking middleware for ML enhancement
+app.add_middleware(BehavioralTrackingMiddleware)
 
 # Include routers
 app.include_router(auth.router)
