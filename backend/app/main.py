@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
 from app.routers import auth, financial, products, coaching
-from app.database import engine, Base
+from app.database import engine, Base, get_db
 from app.middleware.behavioral_tracking_middleware import BehavioralTrackingMiddleware
 import os
 import logging
@@ -44,6 +44,43 @@ app.add_middleware(
 
 # Behavioral tracking middleware for ML enhancement
 app.add_middleware(BehavioralTrackingMiddleware)
+
+# Startup event handler
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services on application startup"""
+    try:
+        # Initialize continuous learning service
+        from app.services.continuous_learning_service import ContinuousLearningService
+        from app.services.training_orchestrator import training_orchestrator
+        
+        db = next(get_db())
+        try:
+            cl_service = ContinuousLearningService()
+            cl_service.initialize_datasets(db)
+            logger.info("Continuous learning service initialized successfully")
+            
+            # Initialize training orchestrator
+            logger.info("Training orchestrator initialized successfully")
+            
+        except Exception as e:
+            logger.error(f"Error initializing continuous learning service: {e}")
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"Error during startup: {e}")
+
+# Shutdown event handler
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup on application shutdown"""
+    try:
+        from app.services.training_orchestrator import training_orchestrator
+        training_orchestrator.shutdown()
+        logger.info("Training orchestrator shutdown completed")
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
 
 # Include routers
 app.include_router(auth.router)

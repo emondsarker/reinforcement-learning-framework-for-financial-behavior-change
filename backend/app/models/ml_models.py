@@ -147,3 +147,81 @@ class EnhancedAIRecommendation(AIRecommendation):
     strategy_used: Optional[RecommendationStrategy] = None
     behavioral_triggers: Optional[List[str]] = None
     personalization_score: Optional[float] = None
+
+# Continuous Learning Module Data Structures for Phase 1
+
+class TrainingDatasetInfo(BaseModel):
+    """Training dataset information"""
+    id: Optional[str] = None
+    dataset_type: str  # 'segmentation', 'recommendation', 'spending', 'goal'
+    data_count: int = 0
+    threshold: int
+    last_training_date: Optional[datetime] = None
+    is_ready_for_training: bool = False
+    threshold_reached: bool = False
+    data_quality_score: Optional[float] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+class ModelTrainingEventInfo(BaseModel):
+    """Model training event information"""
+    id: Optional[str] = None
+    model_type: str
+    training_dataset_id: str
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    status: str = 'pending'  # 'pending', 'in_progress', 'completed', 'failed', 'deployed'
+    performance_metrics: Optional[Dict] = None
+    model_path: Optional[str] = None
+    previous_model_path: Optional[str] = None
+    training_data_size: int = 0
+    validation_score: Optional[float] = None
+    deployment_approved: bool = False
+    created_at: Optional[datetime] = None
+
+class ModelVersionInfo(BaseModel):
+    """Model version information"""
+    id: Optional[str] = None
+    model_type: str
+    version: str  # Semantic version (e.g., "2.1.3")
+    model_path: str
+    training_event_id: str
+    is_active: bool = False
+    performance_baseline: Optional[float] = None
+    performance_current: Optional[float] = None
+    deployment_date: Optional[datetime] = None
+    rollback_count: int = 0
+    model_metadata: Optional[Dict] = None
+    created_at: Optional[datetime] = None
+
+class DataQualityMetricsInfo(BaseModel):
+    """Data quality metrics information"""
+    id: Optional[str] = None
+    training_dataset_id: str
+    completeness_score: Optional[float] = None
+    consistency_score: Optional[float] = None
+    validity_score: Optional[float] = None
+    anomaly_count: int = 0
+    duplicate_count: int = 0
+    missing_values_count: int = 0
+    assessment_date: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+class ContinuousLearningStatus(BaseModel):
+    """Overall continuous learning system status"""
+    datasets: List[TrainingDatasetInfo]
+    active_training_events: List[ModelTrainingEventInfo]
+    model_versions: List[ModelVersionInfo]
+    system_health: Dict[str, str]
+    last_updated: datetime
+
+class TrainingTriggerInfo(BaseModel):
+    """Information about training trigger conditions"""
+    dataset_type: str
+    current_data_count: int
+    threshold: int
+    threshold_reached: bool
+    data_quality_score: float
+    ready_for_training: bool
+    estimated_training_time: Optional[str] = None
+    last_training_date: Optional[datetime] = None

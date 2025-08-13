@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
-from app.models.database import BehavioralEvent, User, UserSegment
+from app.models.database import BehavioralEvent, User, UserSegment, RecommendationFeedback, Transaction
 from app.models.ml_models import BehavioralEventData
 from app.database import get_db
 import asyncio
@@ -132,6 +132,9 @@ class BehavioralEventService:
         try:
             # Store event in database
             await self._store_event(user_id, event_data, db)
+
+            # Flag event for training
+            await self.flag_event_for_training(user_id, event_data.event_type, event_data.dict(), db)
 
             # Analyze behavior change if needed
             if self._should_analyze_behavior_change(event_data.event_type):
@@ -467,6 +470,130 @@ class BehavioralEventService:
         except Exception as e:
             logger.error(f"Error getting user behavior summary: {e}")
             return {}
+
+    async def flag_event_for_training(self, user_id: str, event_type: str, event_data: Dict, db: Session) -> bool:
+        """Flag an event as relevant for model training"""
+        try:
+            # Import here to avoid circular imports
+            from app.services.continuous_learning_service import ContinuousLearningService
+            
+            # Initialize continuous learning service
+            cl_service = ContinuousLearningService()
+            
+            # Process event for training
+            cl_service.process_event_for_training(event_type, event_data, db)
+            
+            return True
+        except Exception as e:
+            logger.error(f"Error flagging event for training: {e}")
+            return False
+
+    async def aggregate_recommendation_feedback(self, db: Session) -> Dict:
+        """Aggregate feedback data for recommendation model training"""
+        try:
+            # Query recommendation feedback
+            feedback_counts = db.query(
+                RecommendationFeedback.feedback_type,
+                func.count(RecommendationFeedback.id)
+            ).group_by(RecommendationFeedback.feedback_type).all()
+            
+            # Format results
+            result = {
+                'total_feedback': sum(count for _, count in feedback_counts),
+                'feedback_types': {feedback_type: count for feedback_type, count in feedback_counts}
+            }
+            
+            # Update training dataset
+            from app.services.continuous_learning_service import ContinuousLearningService
+            cl_service = ContinuousLearningService()
+            cl_service.update_training_dataset('recommendation', result['total_feedback'], db)
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error aggregating recommendation feedback: {e}")
+            return {'error': str(e)}
+
+    async def aggregate_user_transactions(self, db: Session) -> Dict:
+        """Aggregate transaction data for spending prediction model training"""
+        try:
+            # Query transaction counts
+            transaction_count = db.query(func.count(Transaction.id)).scalar()
+            user_count = db.query(func.count(func.distinct(Transaction.user_id))).scalar()
+            
+            # Format results
+            result = {
+                'total_transactions': transaction_count,
+                'unique_users': user_count
+            }
+            
+            # Update training dataset
+            from app.services.continuous_learning_service import ContinuousLearningService
+            cl_service = ContinuousLearningService()
+            cl_service.update_training_dataset('spending', transaction_count, db)
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error aggregating user transactions: {e}")
+            return {'error': str(e)}
+
+    async def aggregate_user_segments(self, db: Session) -> Dict:
+        """Aggregate behavioral data for segmentation model training"""
+        try:
+            # Query segment counts
+            segment_counts = db.query(
+                UserSegment.segment_name,
+                func.count(UserSegment.id)
+            ).group_by(UserSegment.segment_name).all()
+            
+            # Format results
+            result = {
+                'total_segments': sum(count for _, count in segment_counts),
+                'segment_distribution': {segment: count for segment, count in segment_counts}
+            }
+            
+            # Update training dataset
+            from app.services.continuous_learning_service import ContinuousLearningService
+            cl_service = ContinuousLearningService()
+            cl_service.update_training_dataset('segmentation', result['total_segments'], db)
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error aggregating user segments: {e}")
+            return {'error': str(e)}
+
+    async def aggregate_goal_events(self, db: Session) -> Dict:
+        """Aggregate goal-related events for goal achievement model training"""
+        try:
+            # Query goal events
+            goal_events = db.query(BehavioralEvent).filter(
+                BehavioralEvent.event_type == 'goal_modification'
+            ).all()
+            
+            # Count by interaction type
+            interaction_counts = {}
+            for event in goal_events:
+                try:
+                    event_data = json.loads(event.event_data) if event.event_data else {}
+                    interaction_type = event_data.get('interaction_type', 'unknown')
+                    interaction_counts[interaction_type] = interaction_counts.get(interaction_type, 0) + 1
+                except json.JSONDecodeError:
+                    continue
+            
+            # Format results
+            result = {
+                'total_goal_events': len(goal_events),
+                'interaction_types': interaction_counts
+            }
+            
+            # Update training dataset
+            from app.services.continuous_learning_service import ContinuousLearningService
+            cl_service = ContinuousLearningService()
+            cl_service.update_training_dataset('goal', result['total_goal_events'], db)
+            
+            return result
+        except Exception as e:
+            logger.error(f"Error aggregating goal events: {e}")
+            return {'error': str(e)}
 
     def validate_service_health(self) -> Dict:
         """Validate behavioral event service health"""

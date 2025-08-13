@@ -13,9 +13,10 @@ from app.services.ml_service import (
 from app.services.behavioral_event_service import BehavioralEventService
 from app.middleware.auth_middleware import get_current_active_user
 from app.database import get_db
-from app.models.database import User, RecommendationHistory, RecommendationFeedback
+from app.models.database import User, RecommendationHistory, RecommendationFeedback, ModelTrainingEvent, ModelVersion, TrainingDataset
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime
 import json
 
 router = APIRouter(prefix="/coaching", tags=["ai-coaching"])
@@ -633,4 +634,640 @@ async def check_enhanced_model_health():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to check enhanced model health"
+        )
+
+# Continuous Learning endpoints
+
+@router.get("/continuous-learning/status")
+async def get_continuous_learning_status(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get continuous learning system status"""
+    try:
+        from app.services.continuous_learning_service import ContinuousLearningService
+        
+        cl_service = ContinuousLearningService()
+        status = cl_service.get_continuous_learning_status(db)
+        
+        return status
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve continuous learning status"
+        )
+
+@router.get("/continuous-learning/datasets")
+async def get_training_datasets(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get all training datasets information"""
+    try:
+        from app.services.continuous_learning_service import ContinuousLearningService
+        
+        cl_service = ContinuousLearningService()
+        datasets = cl_service.get_training_datasets(db)
+        
+        return {
+            "datasets": datasets,
+            "total_count": len(datasets),
+            "ready_for_training": len([d for d in datasets if d.is_ready_for_training])
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve training datasets"
+        )
+
+@router.get("/continuous-learning/ready-datasets")
+async def get_ready_datasets(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get datasets ready for training"""
+    try:
+        from app.services.continuous_learning_service import ContinuousLearningService
+        
+        cl_service = ContinuousLearningService()
+        ready_datasets = cl_service.check_training_readiness(db)
+        
+        return {
+            "ready_datasets": ready_datasets,
+            "count": len(ready_datasets)
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve ready datasets"
+        )
+
+@router.get("/continuous-learning/data-aggregation")
+async def get_data_aggregation_summary(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get data aggregation summary for all model types"""
+    try:
+        # Aggregate data for all model types
+        recommendation_data = await behavioral_service.aggregate_recommendation_feedback(db)
+        transaction_data = await behavioral_service.aggregate_user_transactions(db)
+        segment_data = await behavioral_service.aggregate_user_segments(db)
+        goal_data = await behavioral_service.aggregate_goal_events(db)
+        
+        return {
+            "recommendation_feedback": recommendation_data,
+            "user_transactions": transaction_data,
+            "user_segments": segment_data,
+            "goal_events": goal_data,
+            "aggregation_timestamp": behavioral_service.validate_service_health()['last_check']
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve data aggregation summary"
+        )
+
+class DataQualityRequest(BaseModel):
+    dataset_id: str
+
+@router.post("/continuous-learning/assess-quality")
+async def assess_data_quality(
+    quality_request: DataQualityRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Assess data quality for a specific dataset"""
+    try:
+        from app.services.continuous_learning_service import ContinuousLearningService
+        import uuid
+        
+        cl_service = ContinuousLearningService()
+        dataset_uuid = uuid.UUID(quality_request.dataset_id)
+        
+        quality_metrics = cl_service.assess_data_quality(dataset_uuid, db)
+        
+        return {
+            "dataset_id": quality_request.dataset_id,
+            "quality_metrics": quality_metrics,
+            "assessment_timestamp": quality_metrics.get('assessment_date', 'unknown')
+        }
+    
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid dataset ID format"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to assess data quality"
+        )
+
+@router.get("/continuous-learning/quality-metrics/{dataset_id}")
+async def get_quality_metrics(
+    dataset_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get historical data quality metrics for a dataset"""
+    try:
+        from app.services.continuous_learning_service import ContinuousLearningService
+        import uuid
+        
+        cl_service = ContinuousLearningService()
+        dataset_uuid = uuid.UUID(dataset_id)
+        
+        metrics = cl_service.get_data_quality_metrics(dataset_uuid, db)
+        
+        return {
+            "dataset_id": dataset_id,
+            "quality_metrics": metrics,
+            "metrics_count": len(metrics)
+        }
+    
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid dataset ID format"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve quality metrics"
+        )
+
+class PrepareDataRequest(BaseModel):
+    dataset_id: str
+
+@router.post("/continuous-learning/prepare-data")
+async def prepare_training_data(
+    prepare_request: PrepareDataRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Prepare data for model training"""
+    try:
+        from app.services.continuous_learning_service import ContinuousLearningService
+        import uuid
+        
+        cl_service = ContinuousLearningService()
+        dataset_uuid = uuid.UUID(prepare_request.dataset_id)
+        
+        prepared_data = cl_service.prepare_training_data(dataset_uuid, db)
+        
+        return prepared_data
+    
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid dataset ID format"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to prepare training data"
+        )
+
+# Phase 3: Model Training endpoints
+
+class TriggerTrainingRequest(BaseModel):
+    priority: int = 1
+
+@router.post("/continuous-learning/trigger-training/{model_type}")
+async def trigger_model_training(
+    model_type: str,
+    training_request: TriggerTrainingRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Manually trigger training for a specific model type"""
+    try:
+        from app.services.training_orchestrator import training_orchestrator
+        from app.services.continuous_learning_service import ContinuousLearningService
+        import uuid
+        
+        # Validate model type
+        valid_model_types = ['recommendation', 'segmentation', 'spending', 'goal']
+        if model_type not in valid_model_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid model type. Must be one of: {valid_model_types}"
+            )
+        
+        # Get the dataset for this model type
+        cl_service = ContinuousLearningService()
+        datasets = cl_service.get_training_datasets(db)
+        
+        target_dataset = next((d for d in datasets if d.dataset_type == model_type), None)
+        if not target_dataset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No dataset found for model type: {model_type}"
+            )
+        
+        # Queue training job
+        dataset_uuid = uuid.UUID(target_dataset.id)
+        job = training_orchestrator.queue_training_job(
+            dataset_uuid, 
+            model_type, 
+            training_request.priority
+        )
+        
+        # Try to start the job if no other job is active
+        if not training_orchestrator.active_job:
+            training_orchestrator.start_training_job(job, db)
+        
+        return {
+            "message": f"Training job queued for {model_type}",
+            "job_id": str(job.id),
+            "status": job.status,
+            "priority": job.priority,
+            "dataset_id": target_dataset.id,
+            "queue_position": len(training_orchestrator.job_queue) if job.status == 'queued' else 0
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to trigger training: {str(e)}"
+        )
+
+@router.get("/continuous-learning/training-status")
+async def get_training_status(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get status of all training jobs"""
+    try:
+        from app.services.training_orchestrator import training_orchestrator
+        
+        all_jobs = training_orchestrator.get_all_jobs()
+        
+        return {
+            "training_status": all_jobs,
+            "queue_length": len(all_jobs['queued']),
+            "active_job_count": len(all_jobs['active']),
+            "completed_job_count": len(all_jobs['completed']),
+            "last_updated": datetime.utcnow().isoformat()
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve training status"
+        )
+
+@router.get("/continuous-learning/training-job/{job_id}")
+async def get_training_job_status(
+    job_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get status of a specific training job"""
+    try:
+        from app.services.training_orchestrator import training_orchestrator
+        import uuid
+        
+        job_uuid = uuid.UUID(job_id)
+        job_status = training_orchestrator.get_job_status(job_uuid)
+        
+        if not job_status:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Training job not found"
+            )
+        
+        return {
+            "job_status": job_status,
+            "retrieved_at": datetime.utcnow().isoformat()
+        }
+    
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid job ID format"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve job status"
+        )
+
+@router.get("/continuous-learning/training-history")
+async def get_training_history(
+    limit: int = 20,
+    model_type: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get history of training events"""
+    try:
+        query = db.query(ModelTrainingEvent)
+        
+        if model_type:
+            query = query.filter(ModelTrainingEvent.model_type == model_type)
+        
+        training_events = query.order_by(
+            ModelTrainingEvent.created_at.desc()
+        ).limit(limit).all()
+        
+        history = []
+        for event in training_events:
+            history.append({
+                "id": str(event.id),
+                "model_type": event.model_type,
+                "status": event.status,
+                "start_time": event.start_time.isoformat(),
+                "end_time": event.end_time.isoformat() if event.end_time else None,
+                "validation_score": float(event.validation_score) if event.validation_score else None,
+                "training_data_size": event.training_data_size,
+                "model_path": event.model_path,
+                "performance_metrics": json.loads(event.performance_metrics) if event.performance_metrics else {}
+            })
+        
+        return {
+            "training_history": history,
+            "total_events": len(history),
+            "filter_applied": {"model_type": model_type} if model_type else None
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve training history"
+        )
+
+@router.get("/continuous-learning/model-versions")
+async def get_model_versions(
+    model_type: Optional[str] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get information about model versions"""
+    try:
+        query = db.query(ModelVersion)
+        
+        if model_type:
+            query = query.filter(ModelVersion.model_type == model_type)
+        
+        model_versions = query.order_by(
+            ModelVersion.model_type,
+            ModelVersion.created_at.desc()
+        ).all()
+        
+        versions = []
+        for version in model_versions:
+            versions.append({
+                "id": str(version.id),
+                "model_type": version.model_type,
+                "version": version.version,
+                "is_active": version.is_active,
+                "performance_baseline": float(version.performance_baseline) if version.performance_baseline else None,
+                "performance_current": float(version.performance_current) if version.performance_current else None,
+                "deployment_date": version.deployment_date.isoformat() if version.deployment_date else None,
+                "rollback_count": version.rollback_count,
+                "model_path": version.model_path,
+                "created_at": version.created_at.isoformat(),
+                "metadata": json.loads(version.model_metadata) if version.model_metadata else {}
+            })
+        
+        return {
+            "model_versions": versions,
+            "total_versions": len(versions),
+            "filter_applied": {"model_type": model_type} if model_type else None
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve model versions"
+        )
+
+@router.get("/continuous-learning/validation-results/{training_event_id}")
+async def get_validation_results(
+    training_event_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Get validation results for a training event"""
+    try:
+        import uuid
+        
+        event_uuid = uuid.UUID(training_event_id)
+        training_event = db.query(ModelTrainingEvent).filter(
+            ModelTrainingEvent.id == event_uuid
+        ).first()
+        
+        if not training_event:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Training event not found"
+            )
+        
+        # Get associated model version
+        model_version = db.query(ModelVersion).filter(
+            ModelVersion.training_event_id == event_uuid
+        ).first()
+        
+        validation_results = {
+            "training_event_id": training_event_id,
+            "model_type": training_event.model_type,
+            "status": training_event.status,
+            "validation_score": float(training_event.validation_score) if training_event.validation_score else None,
+            "performance_metrics": json.loads(training_event.performance_metrics) if training_event.performance_metrics else {},
+            "training_duration": None,
+            "model_version": None
+        }
+        
+        # Calculate training duration
+        if training_event.start_time and training_event.end_time:
+            duration = training_event.end_time - training_event.start_time
+            validation_results["training_duration"] = str(duration)
+        
+        # Add model version info
+        if model_version:
+            validation_results["model_version"] = {
+                "version": model_version.version,
+                "is_active": model_version.is_active,
+                "model_path": model_version.model_path,
+                "metadata": json.loads(model_version.model_metadata) if model_version.model_metadata else {}
+            }
+        
+        return validation_results
+    
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid training event ID format"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve validation results"
+        )
+
+@router.post("/continuous-learning/auto-trigger-ready")
+async def auto_trigger_ready_training(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Automatically trigger training for all ready datasets"""
+    try:
+        from app.services.training_orchestrator import training_orchestrator
+        
+        triggered_jobs = training_orchestrator.trigger_training_if_ready(db)
+        
+        return {
+            "message": f"Auto-triggered {len(triggered_jobs)} training jobs",
+            "triggered_jobs": [
+                {
+                    "job_id": str(job.id),
+                    "model_type": job.model_type,
+                    "status": job.status,
+                    "priority": job.priority
+                }
+                for job in triggered_jobs
+            ],
+            "triggered_at": datetime.utcnow().isoformat()
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to auto-trigger training"
+        )
+
+# Demo/Testing endpoints
+
+class SetDataCountRequest(BaseModel):
+    model_type: str
+    count: int
+
+@router.post("/continuous-learning/demo/set-data-count")
+async def set_dataset_count_for_demo(
+    request: SetDataCountRequest,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Set dataset count for demo purposes"""
+    try:
+        from app.services.continuous_learning_service import ContinuousLearningService
+        
+        # Validate model type
+        valid_model_types = ['recommendation', 'segmentation', 'spending', 'goal']
+        if request.model_type not in valid_model_types:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid model type. Must be one of: {valid_model_types}"
+            )
+        
+        # Get dataset
+        dataset = db.query(TrainingDataset).filter(
+            TrainingDataset.dataset_type == request.model_type
+        ).first()
+        
+        if not dataset:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Dataset not found for model type: {request.model_type}"
+            )
+        
+        # Update count
+        old_count = dataset.data_count
+        dataset.data_count = request.count
+        dataset.updated_at = datetime.utcnow()
+        
+        # Check if threshold reached
+        cl_service = ContinuousLearningService()
+        if dataset.data_count >= dataset.threshold and not dataset.threshold_reached:
+            dataset.threshold_reached = True
+            dataset.data_quality_score = 0.85  # Mock good quality score
+            dataset.is_ready_for_training = True
+        elif dataset.data_count < dataset.threshold:
+            dataset.threshold_reached = False
+            dataset.is_ready_for_training = False
+        
+        db.commit()
+        
+        return {
+            "message": f"Updated {request.model_type} dataset count from {old_count} to {request.count}",
+            "dataset": {
+                "model_type": dataset.dataset_type,
+                "data_count": dataset.data_count,
+                "threshold": dataset.threshold,
+                "threshold_reached": dataset.threshold_reached,
+                "is_ready_for_training": dataset.is_ready_for_training,
+                "data_quality_score": float(dataset.data_quality_score) if dataset.data_quality_score else None
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to set dataset count: {str(e)}"
+        )
+
+@router.post("/continuous-learning/demo/simulate-data-collection")
+async def simulate_data_collection(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """Simulate data collection to reach thresholds for demo"""
+    try:
+        from app.services.continuous_learning_service import ContinuousLearningService
+        
+        cl_service = ContinuousLearningService()
+        datasets = cl_service.get_training_datasets(db)
+        
+        updated_datasets = []
+        
+        for dataset_info in datasets:
+            dataset = db.query(TrainingDataset).filter(
+                TrainingDataset.id == dataset_info.id
+            ).first()
+            
+            if dataset and not dataset.is_ready_for_training:
+                # Set count to just above threshold
+                new_count = dataset.threshold + 10
+                old_count = dataset.data_count
+                
+                dataset.data_count = new_count
+                dataset.threshold_reached = True
+                dataset.data_quality_score = 0.85  # Mock good quality
+                dataset.is_ready_for_training = True
+                dataset.updated_at = datetime.utcnow()
+                
+                updated_datasets.append({
+                    "model_type": dataset.dataset_type,
+                    "old_count": old_count,
+                    "new_count": new_count,
+                    "threshold": dataset.threshold,
+                    "ready_for_training": True
+                })
+        
+        db.commit()
+        
+        return {
+            "message": f"Simulated data collection for {len(updated_datasets)} datasets",
+            "updated_datasets": updated_datasets,
+            "simulation_time": datetime.utcnow().isoformat()
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to simulate data collection: {str(e)}"
         )
