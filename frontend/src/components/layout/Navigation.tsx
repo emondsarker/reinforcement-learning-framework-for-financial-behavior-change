@@ -4,7 +4,6 @@ import {
   HomeIcon,
   WalletIcon,
   ShoppingBagIcon,
-  SparklesIcon,
 } from "@heroicons/react/24/outline";
 
 const navigationItems = [
@@ -32,11 +31,6 @@ const navigationItems = [
     name: "Marketplace",
     href: "/marketplace",
     icon: ShoppingBagIcon,
-  },
-  {
-    name: "AI Coach",
-    href: "/coaching",
-    icon: SparklesIcon,
   },
 ];
 

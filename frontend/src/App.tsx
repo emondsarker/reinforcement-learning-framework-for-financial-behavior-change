@@ -18,7 +18,6 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { WalletPage } from "./pages/WalletPage";
 import { MarketplacePage } from "./pages/MarketplacePage";
-import { CoachingPage } from "./pages/CoachingPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import { AdminPage } from "./pages/AdminPage";
 import { ErrorBoundary, PageLoader } from "./utils";
@@ -77,16 +76,6 @@ const AppRoutes: React.FC = () => {
           <ProtectedRoute>
             <Layout>
               <MarketplacePage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/coaching"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <CoachingPage />
             </Layout>
           </ProtectedRoute>
         }

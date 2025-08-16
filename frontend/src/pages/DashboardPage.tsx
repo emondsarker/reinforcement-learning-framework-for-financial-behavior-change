@@ -1,26 +1,16 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
 import { WalletCard } from "../components/dashboard/WalletCard";
 import { RecentTransactions } from "../components/dashboard/RecentTransactions";
 import { QuickActions } from "../components/dashboard/QuickActions";
 import { RecommendationCard } from "../components/coaching/RecommendationCard";
-import { ArrowRightIcon } from "@heroicons/react/24/outline";
 
 export const DashboardPage: React.FC = () => {
-  const { user } = useAuth();
-
   return (
     <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
       <div className="px-4 py-6 sm:px-0">
-        {/* Welcome Header */}
+        {/* AI Financial Coach - full width */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back{user?.first_name ? `, ${user.first_name}` : ""}!
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Here's an overview of your financial activity
-          </p>
+          <RecommendationCard />
         </div>
 
         {/* Dashboard Grid */}
@@ -43,21 +33,6 @@ export const DashboardPage: React.FC = () => {
 
         {/* Future sections placeholder */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* AI Coaching Recommendations */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">AI Coach</h3>
-              <Link
-                to="/coaching"
-                className="inline-flex items-center text-sm text-purple-600 hover:text-purple-700 font-medium"
-              >
-                View all
-                <ArrowRightIcon className="ml-1 h-4 w-4" />
-              </Link>
-            </div>
-            <RecommendationCard compact showActions={false} />
-          </div>
-
           {/* Spending Analytics - Coming in Task 13 */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="text-center py-8">
