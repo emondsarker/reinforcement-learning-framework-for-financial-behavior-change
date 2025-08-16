@@ -47,13 +47,24 @@ export class CoachingService {
       feedback.feedback_type === "helpful" ||
       feedback.feedback_type === "implemented";
 
-    await api.post("/coaching/feedback", null, {
-      params: {
+    try {
+      // Create a request body that matches the FeedbackRequest model in the backend
+      const requestBody = {
         recommendation_id: recommendationId,
         helpful: helpful,
         feedback_text: feedback.user_comment || null,
-      },
-    });
+      };
+
+      console.log("Sending feedback request:", requestBody);
+
+      // Send the request to the backend
+      const response = await api.post("/coaching/feedback", requestBody);
+
+      console.log("Feedback submission response:", response.data);
+    } catch (error) {
+      console.error("Error submitting feedback:", error);
+      throw error;
+    }
   }
 
   /**
@@ -62,6 +73,7 @@ export class CoachingService {
    */
   async getRecommendationHistory(
     limit: number = 20,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     offset: number = 0
   ): Promise<RecommendationHistory> {
     // For now, simulate history with the current recommendation
@@ -88,7 +100,10 @@ export class CoachingService {
           end: new Date(),
         },
       };
-    } catch (error) {
+    } catch (
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      error
+    ) {
       // If we can't get current recommendation, return empty history
       return {
         user_id: "",

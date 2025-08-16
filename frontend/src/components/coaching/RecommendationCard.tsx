@@ -2,17 +2,14 @@ import React, { useState } from "react";
 import {
   SparklesIcon,
   CheckIcon,
-  XMarkIcon,
   ArrowPathIcon,
   ClockIcon,
 } from "@heroicons/react/24/outline";
 import {
   useRecommendation,
-  useSubmitRecommendationFeedback,
   useRefreshRecommendation,
   useActionTypeInfo,
 } from "../../hooks/useCoaching";
-import type { CoachingFeedback } from "../../types";
 
 interface RecommendationCardProps {
   className?: string;
@@ -31,9 +28,8 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
     error,
     refetch,
   } = useRecommendation();
-  const submitFeedback = useSubmitRecommendationFeedback();
   const refreshRecommendation = useRefreshRecommendation();
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackSubmitted] = useState(false);
 
   // Always call the hook, but use a fallback action type if no recommendation
   const actionInfo = useActionTypeInfo(
@@ -103,24 +99,8 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
     return "text-red-600";
   };
 
-  const handleFeedback = async (
-    feedbackType: CoachingFeedback["feedback_type"],
-    comment?: string
-  ) => {
-    try {
-      await submitFeedback.mutateAsync({
-        recommendationId: `${recommendation.action_id}-${Date.now()}`, // Generate ID
-        feedback: {
-          recommendation_id: `${recommendation.action_id}-${Date.now()}`,
-          feedback_type: feedbackType,
-          user_comment: comment,
-        },
-      });
-      setFeedbackSubmitted(true);
-    } catch {
-      // Error handling is done in the hook
-    }
-  };
+  // Feedback function temporarily disabled due to backend issues
+  // Will be re-enabled once the backend issue is resolved
 
   const handleRefresh = async () => {
     try {
@@ -180,34 +160,21 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
         </p>
       </div>
 
-      {/* Actions */}
+      {/* Actions - Temporarily removed due to backend issues */}
       {showActions && !feedbackSubmitted && (
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">Was this helpful?</span>
+            <span className="text-sm text-gray-600">
+              Feedback options temporarily unavailable
+            </span>
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => handleFeedback("helpful")}
-                disabled={submitFeedback.isPending}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-              >
-                <CheckIcon className="h-3 w-3 mr-1" />
-                Helpful
-              </button>
-              <button
-                onClick={() => handleFeedback("not_helpful")}
-                disabled={submitFeedback.isPending}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-              >
-                <XMarkIcon className="h-3 w-3 mr-1" />
-                Not Helpful
-              </button>
-              <button
-                onClick={() => handleFeedback("implemented")}
-                disabled={submitFeedback.isPending}
+                onClick={() => handleRefresh()}
+                disabled={refreshRecommendation.isPending}
                 className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50"
               >
-                Done
+                <ArrowPathIcon className="h-3 w-3 mr-1" />
+                Refresh
               </button>
             </div>
           </div>
