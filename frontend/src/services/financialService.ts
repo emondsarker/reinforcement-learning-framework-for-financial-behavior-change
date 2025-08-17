@@ -35,6 +35,17 @@ export const getTransactions = async (
   params: GetTransactionsParams = {}
 ): Promise<PaginatedResponse<Transaction>> => {
   const response = await api.get("/financial/transactions", { params });
+  // Convert the array response to the expected PaginatedResponse format
+  if (Array.isArray(response.data)) {
+    return {
+      data: response.data,
+      total: response.data.length,
+      page: params.page || 1,
+      limit: params.limit || response.data.length,
+      has_more: false,
+      total_pages: 1,
+    };
+  }
   return response.data;
 };
 
@@ -104,5 +115,5 @@ export const getRecentTransactions = async (
   const response = await api.get("/financial/transactions", {
     params: { limit, page: 1 },
   });
-  return response.data.items || response.data;
+  return response.data.data || response.data;
 };
