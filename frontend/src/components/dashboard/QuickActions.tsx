@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   PlusIcon,
   WalletIcon,
-  ShoppingBagIcon,
   ChartBarIcon,
   ArrowTrendingUpIcon,
   CreditCardIcon,
@@ -62,13 +61,6 @@ export const QuickActions: React.FC = () => {
       title: "View Wallet",
       description: "Manage your finances",
       color: "bg-green-500",
-    },
-    {
-      to: "/marketplace",
-      icon: <ShoppingBagIcon className="h-6 w-6 text-white" />,
-      title: "Marketplace",
-      description: "Browse products",
-      color: "bg-purple-500",
     },
     {
       to: "/analytics",

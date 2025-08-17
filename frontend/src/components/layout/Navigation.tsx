@@ -1,10 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import {
-  HomeIcon,
-  WalletIcon,
-  ShoppingBagIcon,
-} from "@heroicons/react/24/outline";
+import { HomeIcon, WalletIcon } from "@heroicons/react/24/outline";
 
 const navigationItems = [
   {
@@ -26,11 +22,6 @@ const navigationItems = [
     name: "Wallet",
     href: "/wallet",
     icon: WalletIcon,
-  },
-  {
-    name: "Marketplace",
-    href: "/marketplace",
-    icon: ShoppingBagIcon,
   },
 ];
 

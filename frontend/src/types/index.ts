@@ -35,29 +35,6 @@ export type {
   MonthlyReport,
 } from "./financial";
 
-// Product types
-export type {
-  ProductCategory,
-  Product,
-  ProductCreate,
-  PurchaseRequest,
-  Purchase,
-  ProductFilter,
-  CategoryCreate,
-  ProductWithCategory,
-  CartItem,
-  ShoppingCart,
-  ProductListState,
-  ProductFilters,
-  PurchaseFormData,
-  PurchaseHistory,
-  ProductReview,
-  ProductWithReviews,
-  WishlistItem,
-  MarketplaceStats,
-  ProductSearchResult,
-} from "./products";
-
 // Coaching types
 export type {
   AIRecommendation,

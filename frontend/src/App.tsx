@@ -10,14 +10,12 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "./lib/queryClient";
 import { ToastProvider } from "./contexts/ToastContext";
 import { AuthProvider, useAuthContext } from "./contexts/AuthContext";
-import { CartProvider } from "./contexts/CartContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { Layout } from "./components/layout/Layout";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { WalletPage } from "./pages/WalletPage";
-import { MarketplacePage } from "./pages/MarketplacePage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import { AdminPage } from "./pages/AdminPage";
 import { ErrorBoundary, PageLoader } from "./utils";
@@ -71,16 +69,6 @@ const AppRoutes: React.FC = () => {
         }
       />
       <Route
-        path="/marketplace"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <MarketplacePage />
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/analytics"
         element={
           <ProtectedRoute>
@@ -124,11 +112,9 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
           <AuthProvider>
-            <CartProvider>
-              <Router>
-                <AppRoutes />
-              </Router>
-            </CartProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
           </AuthProvider>
         </ToastProvider>
         <ReactQueryDevtools initialIsOpen={false} />

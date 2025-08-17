@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
-from app.routers import auth, financial, products, coaching
+from app.routers import auth, financial, coaching
 from app.database import engine, Base, get_db
 from app.middleware.behavioral_tracking_middleware import BehavioralTrackingMiddleware
 import os
@@ -85,7 +85,6 @@ async def shutdown_event():
 # Include routers
 app.include_router(auth.router)
 app.include_router(financial.router)
-app.include_router(products.router)
 app.include_router(coaching.router)
 
 @app.get("/")
@@ -117,14 +116,12 @@ async def api_info():
         "endpoints": {
             "authentication": "/auth",
             "financial": "/financial",
-            "products": "/products",
             "ai_coaching": "/coaching"
         },
         "features": [
             "User authentication with JWT",
             "Financial transaction management",
             "Virtual wallet system",
-            "Product marketplace simulation",
             "AI-powered financial coaching",
             "Spending analytics and insights"
         ]
